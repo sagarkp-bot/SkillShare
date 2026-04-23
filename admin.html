@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+</head>
+<body data-nav="admin" data-active="admin">
+<div id="nav"></div>
+
+<div class="container">
+    <div class="stats">
+        <div class="stat"><h3>Total Users</h3><p id="users">...</p></div>
+        <div class="stat"><h3>Total Tutorials</h3><p id="tutorials">...</p></div>
+        <div class="stat"><h3>Total Comments</h3><p id="comments">...</p></div>
+        <div class="stat"><h3>Pending Reports</h3><p id="reportCount">...</p></div>
+    </div>
+
+    <h3 class="table-title">Skill Requests</h3>
+    <table>
+        <thead><tr><th>Skill Requested</th><th>Details</th><th>Requested By</th><th>Status</th></tr></thead>
+        <tbody id="reqTable"><tr><td colspan="4">Loading...</td></tr></tbody>
+    </table>
+
+    <h3 class="table-title">Reported Tutorials</h3>
+    <table>
+        <thead><tr><th>Tutorial</th><th>Reason</th><th>Reported By</th><th>Status</th><th>Action</th></tr></thead>
+        <tbody id="reportTable"><tr><td colspan="5">Loading...</td></tr></tbody>
+    </table>
+
+    <h3 class="table-title">Users</h3>
+    <table>
+        <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Action</th></tr></thead>
+        <tbody id="userTable"><tr><td colspan="4">Loading...</td></tr></tbody>
+    </table>
+
+    <h3 class="table-title">Tutorials</h3>
+    <table>
+        <thead><tr><th>Title</th><th>Category</th><th>Author</th><th>Action</th></tr></thead>
+        <tbody id="tutTable"><tr><td colspan="4">Loading...</td></tr></tbody>
+    </table>
+</div>
+
+<script src="app.js"></script>
+<script>
+function deleteUser(id){ // remove user
+    if(!confirm("Are you sure you want to delete this user? Their tutorials will also be deleted.")) return
+    fetch("admin_delete_user.php",{method:"POST",body:makeData({id:id})})
+        .then(function(res){return res.json()})
+        .then(function(data){
+            if(!data.success){
+                alert(data.message||"Could not delete user.")
+                return
+            }
+            let row=byId("user_"+id)
+            if(row) row.remove()
+        })
+}
+
+function deleteTutorial(id){ // remove tutorial
+    if(!confirm("Are you sure you want to delete this tutorial?")) return
+    fetch("admin_delete_tutorial.php",{method:"POST",body:makeData({id:id})})
+        .then(function(res){return res.json()})
+        .then(function(data){
+            if(!data.success){
+                alert(data.message||"Could not delete tutorial.")
+                return
+            }
+            let row=byId("tut_"+id)
+            if(row) row.remove()
+        })
+}
+
+function resolveReport(id){ // resolve row
+    fetch("resolve_report.php",{method:"POST",body:makeData({id:id})})
+        .then(function(res){return res.json()})
+        .then(function(data){
+            if(!data.success) return
+            let row=byId("report_"+id)
+            if(!row) return
+            row.cells[3].innerText="resolved"
+            row.cells[4].innerHTML="-"
+        })
+}
+
+function loadAdminData(){ // stats data
+    loadJson("admin_stats.php",function(data){
+        if(data.error){
+            alert("Access denied. Admins only.")
+            window.location="index.html"
+            return
+        }
+
+        byId("users").innerText=data.user_count
+        byId("tutorials").innerText=data.tut_count
+        byId("comments").innerText=data.comment_count
+
+        let userHtml=""
+        data.users.forEach(function(item){
+            let action=item.role==="admin"?"Protected":'<button onclick="deleteUser('+item.id+')">Remove</button>'
+            userHtml+='<tr id="user_'+item.id+'"><td>'+safe(item.name)+'</td><td>'+safe(item.email)+'</td><td>'+safe(item.role)+'</td><td>'+action+'</td></tr>'
+        })
+        byId("userTable").innerHTML=userHtml
+
+        let tutHtml=""
+        data.tutorials.forEach(function(item){
+            tutHtml+='<tr id="tut_'+item.id+'"><td>'+safe(item.title)+'</td><td>'+safe(item.category)+'</td><td>'+safe(item.author)+'</td><td><button onclick="deleteTutorial('+item.id+')">Delete</button></td></tr>'
+        })
+        byId("tutTable").innerHTML=tutHtml
+    },function(){
+        alert("Could not load admin data. Is the server running?")
+    })
+}
+
+function loadRequests(){ // request rows
+    loadJson("get_requests.php",function(items){
+        if(items.error) return
+        if(!items.length){
+            byId("reqTable").innerHTML="<tr><td colspan='4' class='muted'>No requests yet.</td></tr>"
+            return
+        }
+        let html=""
+        items.forEach(function(item){
+            html+='<tr><td>'+safe(item.skill)+'</td><td>'+safe(item.details||"-")+'</td><td>'+safe(item.requested_by)+'</td><td>'+safe(item.status)+'</td></tr>'
+        })
+        byId("reqTable").innerHTML=html
+    })
+}
+
+function loadReports(){ // report rows
+    loadJson("get_reports.php",function(items){
+        if(items.error) return
+        byId("reportCount").innerText=items.filter(function(item){return item.status==="pending"}).length
+        if(!items.length){
+            byId("reportTable").innerHTML="<tr><td colspan='5' class='muted'>No reports yet.</td></tr>"
+            return
+        }
+        let html=""
+        items.forEach(function(item){
+            let action=item.status==="pending"?'<button onclick="resolveReport('+item.id+')">Resolve</button>':"-"
+            html+='<tr id="report_'+item.id+'"><td>'+safe(item.tutorial_title)+'</td><td>'+safe(item.reason)+'</td><td>'+safe(item.reported_by)+'</td><td>'+safe(item.status)+'</td><td>'+action+'</td></tr>'
+        })
+        byId("reportTable").innerHTML=html
+    })
+}
+
+loadAdminData() // first load
+loadRequests() // first requests
+loadReports() // first reports
+</script>
+</body>
+</html>

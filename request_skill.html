@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Skill Requests</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+</head>
+<body data-nav="user" data-active="request">
+<div id="nav"></div>
+
+<div class="page">
+    <div class="box sticky">
+        <h2>Request a Skill</h2>
+        <p>Can't find a tutorial you need? Request it here and a creator will upload one for you!</p>
+        <form action="submit_request.php" method="POST">
+            <input name="skill" placeholder="Skill or Topic (e.g. Python basics)" required>
+            <textarea name="details" rows="4" placeholder="Any extra details? (optional)"></textarea>
+            <button class="wide-btn">Submit Request</button>
+        </form>
+    </div>
+
+    <div>
+        <h2 class="list-title">What People Want to Learn</h2>
+        <div id="requestList"><p class="muted">Loading requests...</p></div>
+    </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+function uploadForRequest(skill){ // upload page
+    localStorage.setItem("prefill_title",skill)
+    window.location="upload.html"
+}
+
+function showRequests(items){ // make list
+    if(items.error==="not_logged_in"){
+        alert("Please login to view requests.")
+        window.location="auth.html"
+        return
+    }
+
+    if(!items.length){
+        byId("requestList").innerHTML="<p class='muted'>No requests yet. Be the first to request a skill!</p>"
+        return
+    }
+
+    let html=""
+    items.forEach(function(item){
+        let details=item.details?'<p>'+safe(item.details)+'</p>':""
+        html+='<div class="req-card"><div class="req-info"><h3>'+safe(item.skill)+'</h3>'+details+'<div class="meta">Requested by '+safe(item.requested_by)+'</div></div><button class="upload-btn" onclick="uploadForRequest(this.dataset.skill)" data-skill="'+safe(item.skill)+'">&#8593; Upload for this</button></div>'
+    })
+    byId("requestList").innerHTML=html
+}
+
+loadJson("get_all_requests.php",showRequests,function(){ // load list
+    byId("requestList").innerHTML="<p class='error'>Could not load requests. Is the server running?</p>"
+})
+</script>
+</body>
+</html>

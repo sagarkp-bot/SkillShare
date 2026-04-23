@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Explore</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+</head>
+<body data-nav="user" data-active="explore">
+<div id="nav"></div>
+
+<div class="page-head"><h2>Explore Tutorials</h2></div>
+<div class="search"><input id="search" placeholder="Search tutorials"></div>
+
+<div class="tabs">
+    <button class="activeTab" onclick="pickCat(this,'All')">All</button>
+    <button onclick="pickCat(this,'Coding')">Coding</button>
+    <button onclick="pickCat(this,'Fitness')">Fitness</button>
+    <button onclick="pickCat(this,'Cooking')">Cooking</button>
+</div>
+
+<div class="grid container" id="list"><p class="empty">Loading tutorials...</p></div>
+
+<script src="app.js"></script>
+<script>
+let currentCat="All" // filter
+
+function loadTutorials(){ // load list
+    let search=byId("search").value
+    let url="get_tutorials.php?category="+encodeURIComponent(currentCat)+"&search="+encodeURIComponent(search)
+    loadJson(url,renderCards,function(){
+        byId("list").innerHTML="<p class='empty error'>Could not load tutorials. Is the server running?</p>"
+    })
+}
+
+function renderCards(items){ // make cards
+    if(!items.length){
+        byId("list").innerHTML="<p class='empty'>No tutorials found.</p>"
+        return
+    }
+
+    let html=""
+    items.forEach(function(item){
+        html+='<div class="card"><img src="'+thumb(item.video_url)+'" onerror="this.src=\'https://via.placeholder.com/400\'"><div class="cover"><button class="small-btn" onclick="openTutorial('+item.id+')">View</button></div><h3>'+safe(item.title)+'</h3><p>'+safe(item.category)+' &bull; '+safe(item.content_type)+' &bull; '+(item.like_count||0)+' likes &bull; by '+safe(item.author)+'</p></div>'
+    })
+    byId("list").innerHTML=html
+}
+
+function openTutorial(id){ // open page
+    goWithId("tutorial_id",id,"tutorial.html")
+}
+
+function pickCat(button,cat){ // pick tab
+    currentCat=cat
+    document.querySelectorAll(".tabs button").forEach(function(item){item.classList.remove("activeTab")})
+    button.classList.add("activeTab")
+    loadTutorials()
+}
+
+byId("search").oninput=loadTutorials // live search
+loadTutorials() // first load
+</script>
+</body>
+</html>

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tutorial</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+</head>
+<body data-nav="user" data-active="explore">
+<div id="nav"></div>
+
+<div class="container" style="max-width:900px;margin:auto;">
+    <div class="media" id="media"></div>
+
+    <div class="info">
+        <h1 id="title">Loading...</h1>
+        <p id="category"></p>
+        <p id="author" class="muted"></p>
+        <p id="description" style="margin-top:10px;"></p>
+
+        <div class="row">
+            <button id="likeBtn" class="small-btn" onclick="toggleLike()">♥ Like (<span id="likeCount">0</span>)</button>
+            <button class="small-btn soft-btn" onclick="showReportForm()">⚑ Report</button>
+        </div>
+
+        <div id="reportForm" class="hidden" style="margin-top:15px;">
+            <input id="reportReason" placeholder="Why are you reporting this tutorial?">
+            <button onclick="submitReport()">Submit Report</button>
+        </div>
+    </div>
+
+    <div class="comments">
+        <h2>Comments</h2>
+        <input id="input" placeholder="Write a comment">
+        <button onclick="addComment()">Post</button>
+        <div id="commentList"></div>
+    </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+let tutorialId=localStorage.getItem("tutorial_id")||"" // page id
+
+function loadTutorial(){ // main data
+    if(!tutorialId){
+        byId("title").innerText="No tutorial selected"
+        return
+    }
+
+    loadJson("get_tutorial.php?id="+tutorialId,function(item){
+        if(item.error){
+            byId("title").innerText="Tutorial not found"
+            return
+        }
+        byId("title").innerText=item.title
+        byId("category").innerText=item.category+" - "+item.content_type+" - "+(item.views||0)+" views - "+(item.comment_count||0)+" comments"
+        byId("author").innerText="By: "+item.author
+        byId("description").innerText=item.description
+        byId("media").innerHTML=mediaHtml(item.video_url)
+    })
+}
+
+function loadComments(){ // comments
+    loadJson("get_comments.php?tutorial_id="+tutorialId,function(items){
+        if(!items.length){
+            byId("commentList").innerHTML="<p class='muted' style='margin-top:10px;'>No comments yet. Be the first!</p>"
+            return
+        }
+        let html=""
+        items.forEach(function(item){
+            html+='<div class="comment"><strong>'+safe(item.name)+'</strong><p>'+safe(item.comment)+'</p></div>'
+        })
+        byId("commentList").innerHTML=html
+    })
+}
+
+function addComment(){ // add comment
+    let text=byId("input").value.trim()
+    if(!text) return
+    fetch("add_comment.php",{method:"POST",body:makeData({tutorial_id:tutorialId,comment:text})})
+        .then(function(res){return res.json()})
+        .then(function(data){
+            if(!data.success){
+                alert(data.message||"Could not post comment. Are you logged in?")
+                return
+            }
+            byId("input").value=""
+            loadComments()
+        })
+}
+
+function loadLikes(){ // like info
+    loadJson("like_tutorial.php?tutorial_id="+tutorialId,function(data){
+        byId("likeCount").innerText=data.count||0
+        byId("likeBtn").style.background=data.liked?"#111":"#888"
+    })
+}
+
+function toggleLike(){ // toggle like
+    fetch("like_tutorial.php",{method:"POST",body:makeData({tutorial_id:tutorialId})})
+        .then(function(res){return res.json()})
+        .then(function(data){
+            if(data.error==="not_logged_in"){
+                alert("Please login to like tutorials.")
+                return
+            }
+            byId("likeCount").innerText=data.count
+            byId("likeBtn").style.background=data.liked?"#111":"#888"
+        })
+}
+
+function showReportForm(){ // report box
+    byId("reportForm").classList.toggle("hidden")
+}
+
+function submitReport(){ // send report
+    let reason=byId("reportReason").value.trim()
+    if(!reason){
+        alert("Please enter a reason.")
+        return
+    }
+    fetch("report_tutorial.php",{method:"POST",body:makeData({tutorial_id:tutorialId,reason:reason})})
+        .then(function(res){return res.json()})
+        .then(function(data){
+            if(data.error==="not_logged_in"){
+                alert("Please login to report tutorials.")
+                return
+            }
+            if(!data.success){
+                alert(data.message||"Could not submit report.")
+                return
+            }
+            alert("Report submitted. Thank you!")
+            byId("reportReason").value=""
+            byId("reportForm").classList.add("hidden")
+        })
+}
+
+loadTutorial() // first load
+loadComments() // first comments
+loadLikes() // first likes
+</script>
+</body>
+</html>

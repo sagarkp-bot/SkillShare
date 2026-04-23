@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Edit Tutorial</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+</head>
+<body data-nav="user" data-active="profile">
+<div id="nav"></div>
+
+<div class="container center">
+    <div class="box small-box">
+        <h2>Edit Tutorial</h2>
+        <form action="update_tutorial.php" method="POST">
+            <input type="hidden" id="tutId" name="id">
+            <input id="titleInput" name="title" placeholder="Title" required>
+            <select id="catInput" name="category">
+                <option>Coding</option>
+                <option>Fitness</option>
+                <option>Cooking</option>
+            </select>
+            <textarea id="descInput" name="description" placeholder="Description" required></textarea>
+            <input id="videoInput" name="video" placeholder="YouTube Video URL">
+            <button class="wide-btn">Save Changes</button>
+        </form>
+    </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+let tutorialId=localStorage.getItem("edit_tutorial_id") // edit id
+
+if(!tutorialId){
+    alert("No tutorial selected.")
+    window.location="profile.html"
+}
+
+loadJson("get_tutorial.php?id="+tutorialId+"&track=0",function(item){ // load form
+    if(item.error){
+        alert("Tutorial not found.")
+        window.location="profile.html"
+        return
+    }
+    byId("tutId").value=item.id
+    byId("titleInput").value=item.title
+    byId("descInput").value=item.description
+    byId("videoInput").value=item.video_url
+    byId("catInput").value=item.category
+})
+</script>
+</body>
+</html>

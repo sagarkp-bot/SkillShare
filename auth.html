@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auth</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body class="auth-page">
+<div class="box auth-box">
+    <h2 id="title">Login</h2>
+
+    <form id="loginForm" action="login.php" method="POST">
+        <input name="email" type="email" placeholder="Email" required>
+        <input name="password" type="password" placeholder="Password" required>
+        <button class="wide-btn">Login</button>
+    </form>
+
+    <form id="registerForm" action="register.php" method="POST" class="hidden">
+        <input name="name" type="text" placeholder="Full Name" required>
+        <input name="email" type="email" placeholder="Email" required>
+        <input name="password" type="password" placeholder="Password" required>
+        <button class="wide-btn">Register</button>
+    </form>
+
+    <div id="switchText" class="switch" onclick="toggleForm()">Create account</div>
+</div>
+
+<script src="app.js"></script>
+<script>
+let isLogin=true // mode
+
+function toggleForm(){ // switch form
+    isLogin=!isLogin
+    byId("loginForm").classList.toggle("hidden")
+    byId("registerForm").classList.toggle("hidden")
+    byId("title").innerText=isLogin?"Login":"Register"
+    byId("switchText").innerText=isLogin?"Create account":"Already have an account?"
+}
+</script>
+</body>
+</html>

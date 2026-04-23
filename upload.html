@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Upload Tutorial</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+</head>
+<body data-nav="user" data-active="upload">
+<div id="nav"></div>
+
+<div class="container center">
+    <div class="box small-box">
+        <h2>Upload Tutorial</h2>
+        <form action="upload.php" method="POST">
+            <input id="title" name="title" placeholder="Title" required>
+            <select name="category">
+                <option>Coding</option>
+                <option>Fitness</option>
+                <option>Cooking</option>
+            </select>
+            <textarea name="description" placeholder="Description" required></textarea>
+            <input id="video" name="video" placeholder="YouTube Video URL">
+            <img id="preview" src="" style="width:100%;height:160px;margin-top:10px;background:#ddd;object-fit:cover;border-radius:10px;">
+            <button class="wide-btn">Upload</button>
+        </form>
+    </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+function showPreview(){ // preview
+    byId("preview").src=thumb(byId("video").value)
+}
+
+let prefill=localStorage.getItem("prefill_title") // prefill
+if(prefill){
+    byId("title").value=prefill
+    localStorage.removeItem("prefill_title")
+}
+
+byId("video").oninput=showPreview // live image
+</script>
+</body>
+</html>
